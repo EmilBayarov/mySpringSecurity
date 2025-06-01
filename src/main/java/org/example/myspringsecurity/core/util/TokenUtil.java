@@ -21,12 +21,18 @@ public class TokenUtil {
             token.setExpired(true);
             token.setRevoked(true);
         });
+        tokenRepository.saveAll(validUserTokens);
     }
 
-    public void saveUserToken(User savedUser, String accessToken, String refreshToken) {
+    public void revokeToken(Token token) {
+        token.setExpired(true);
+        token.setRevoked(true);
+        tokenRepository.save(token);
+    }
+
+    public void saveUserToken(User savedUser, String refreshToken) {
         Token token = Token.builder()
                 .user(savedUser)
-                .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType(TokenType.BEARER)
                 .revoked(false)

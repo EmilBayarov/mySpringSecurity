@@ -13,9 +13,15 @@ import org.example.myspringsecurity.model.dto.AuthenticationResponse;
 import org.example.myspringsecurity.model.dto.RegisterRequest;
 import org.example.myspringsecurity.model.entity.ActivationCode;
 import org.example.myspringsecurity.model.entity.Role;
+import org.example.myspringsecurity.model.entity.Token;
 import org.example.myspringsecurity.model.entity.User;
 import org.example.myspringsecurity.model.repository.ActivationCodeRepository;
+import org.example.myspringsecurity.model.repository.TokenRepository;
 import org.example.myspringsecurity.model.repository.UserRepository;
+import org.example.myspringsecurity.securityLib.authentication.auth.AuthenticationManager;
+import org.example.myspringsecurity.securityLib.authentication.UsernamePasswordAuthenticationToken;
+import org.example.myspringsecurity.securityLib.core.Authentication;
+import org.example.myspringsecurity.securityLib.core.context.SecurityContextHolder;
 import org.example.myspringsecurity.securityLib.crypto.password.PasswordEncoder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
@@ -32,6 +38,8 @@ public class AuthenticationService {
     private final ActivationCodeRepository activationCodeRepository;
     private final JwtService jwtService;
     private final TokenUtil tokenUtil;
+    private final AuthenticationManager authenticationManager;
+    private final TokenRepository tokenRepository;
 
     public void register(RegisterRequest registerRequest) {
         User user = User.builder()
@@ -47,16 +55,18 @@ public class AuthenticationService {
         emailSenderUtil.sendValidationEmail(user);
     }
 
-    public AuthenticationResponse authenticate(AuthenticationRequest authenticationRequest) {
-        User user = userRepository.findByEmail(authenticationRequest.email())
-                .orElseThrow(()-> new RuntimeException("User not found"));
-        if(!passwordEncoder.matches(authenticationRequest.password(), user.getPassword())) {
-            throw new IllegalArgumentException("Password is not matches");
-        }
+    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.email(),
+                        request.password()
+                )
+        );
+        User user = (User) authentication.getPrincipal();
         String accessToken = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-        tokenUtil.revokeAllUserTokens(user);
-        tokenUtil.saveUserToken(user, accessToken, refreshToken);
+//        tokenUtil.revokeAllUserTokens(user);
+        tokenUtil.saveUserToken(user, refreshToken);
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -94,7 +104,7 @@ public class AuthenticationService {
             if (jwtService.isTokenValid(refreshToken, user)) {
                 var accessToken = jwtService.generateToken(user);
                 tokenUtil.revokeAllUserTokens(user);
-                tokenUtil.saveUserToken(user, accessToken, refreshToken);
+                tokenUtil.saveUserToken(user, refreshToken);
                 var authResponse = AuthenticationResponse.builder()
                         .refreshToken(refreshToken)
                         .accessToken(accessToken)
@@ -102,5 +112,30 @@ public class AuthenticationService {
                 new ObjectMapper().writeValue(response.getOutputStream(),authResponse);
             }
         }
+    }
+
+    public AuthenticationResponse refresh(String token) {
+        Token existingToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid refresh token: "+token));
+        tokenUtil.revokeToken(existingToken);
+        final String accessToken = jwtService.generateToken(existingToken.getUser());
+        final String refreshToken = jwtService.generateRefreshToken(existingToken.getUser());
+        tokenUtil.saveUserToken(existingToken.getUser(), refreshToken);
+        return AuthenticationResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
+    public void deAuthenticate(String token) {
+        Token existingToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid refresh token: "+token));
+        tokenUtil.revokeToken(existingToken);
+    }
+
+    public void deAuthenticateFromAllSession() {
+        System.err.println("Security Context Holder:: "+SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        tokenUtil.revokeAllUserTokens(user);
     }
 }

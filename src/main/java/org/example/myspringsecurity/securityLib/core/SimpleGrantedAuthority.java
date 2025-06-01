@@ -1,29 +1,34 @@
 package org.example.myspringsecurity.securityLib.core;
 
-public final class SimpleGrantedAuthority implements GrantedAuthority {
+import org.springframework.util.Assert;
+
+public class SimpleGrantedAuthority implements GrantedAuthority {
     private final String role;
+
     public SimpleGrantedAuthority(String role) {
+        Assert.hasText(role, "A granted authority textual representation is required");
         this.role = role;
-    }
-    @Override
-    public String getAuthorities() {
-        return role;
     }
 
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
+    public String getAuthority() {
+        return this.role;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (object instanceof SimpleGrantedAuthority sga) {
-            return this.role.equals(sga.getAuthorities());
+        if (obj instanceof SimpleGrantedAuthority sga) {
+            return this.role.equals(sga.getAuthority());
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return this.hashCode();
+        return this.role.hashCode();
     }
 
     @Override

@@ -3,7 +3,7 @@ package org.example.myspringsecurity.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.example.myspringsecurity.securityLib.core.GrantedAuthority;
-import org.example.myspringsecurity.securityLib.userDetails.UserDetails;
+import org.example.myspringsecurity.securityLib.core.userDetails.UserDetails;
 
 import java.security.Principal;
 import java.util.Collection;
@@ -73,4 +73,5 @@ public class User implements UserDetails, Principal {
     public boolean isEnabled() {
         return enabled;
     }
+
 }

@@ -6,7 +6,7 @@ spring:
     password: 12345
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -24,6 +24,14 @@ spring:
           auth: true
           starttls:
             enable: true
+  security:
+    cookie-settings: # Settings applied to the refresh token cookie
+      http-only: false    # Prevents JavaScript from reading the cookie (mitigates XSS) WARNING: must be true in Production
+      secure: false       # Ensures the cookie is sent only over HTTPS; WARNING: must be true in Production
+      maxAge: 2592000  # Lifetime in seconds (2592000s = 30 days)
+      sameSite: Strict   # Restricts sending cookie on cross‑site requests (CSRF protection)
+      path: /auth
+
 application:
   security:
     jwt:
@@ -31,8 +39,3 @@ application:
       expiration: 86400000 # a day
       refresh-token:
         expiration: 604800000 # 7 days
-
-server:
-  servlet:
-    context-path: /api/v1/
-  port: 8082
