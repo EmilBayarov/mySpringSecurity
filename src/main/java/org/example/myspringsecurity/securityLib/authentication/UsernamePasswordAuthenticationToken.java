@@ -1,6 +1,5 @@
 package org.example.myspringsecurity.securityLib.authentication;
 
-import org.example.myspringsecurity.model.entity.User;
 import org.example.myspringsecurity.securityLib.core.GrantedAuthority;
 
 import java.util.Collection;

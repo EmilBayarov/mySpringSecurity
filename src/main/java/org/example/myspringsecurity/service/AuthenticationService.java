@@ -131,11 +131,13 @@ public class AuthenticationService {
         Token existingToken = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid refresh token: "+token));
         tokenUtil.revokeToken(existingToken);
+        SecurityContextHolder.clearContext();
     }
 
     public void deAuthenticateFromAllSession() {
         System.err.println("Security Context Holder:: "+SecurityContextHolder.getContext().getAuthentication().getPrincipal());
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         tokenUtil.revokeAllUserTokens(user);
+        SecurityContextHolder.clearContext();
     }
 }
