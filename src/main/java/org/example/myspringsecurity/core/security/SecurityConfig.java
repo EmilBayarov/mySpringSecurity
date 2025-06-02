@@ -1,6 +1,5 @@
 package org.example.myspringsecurity.core.security;
 
-import lombok.RequiredArgsConstructor;
 import org.example.myspringsecurity.core.security.filter.AuthorizationFilter;
 import org.example.myspringsecurity.core.security.filter.CorsFilter;
 import org.example.myspringsecurity.core.security.v1.SecurityConfigRegistry;
